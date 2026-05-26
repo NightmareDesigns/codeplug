@@ -52,7 +52,7 @@ const setStatus = (state, message) => {
   statusEl.textContent = message;
 };
 
-const isDetailReady = (details, expectation) => {
+const isDetailReady = (details, pathType) => {
   if (!details.isValid || details.extension !== ".xctb") {
     return false;
   }
@@ -61,14 +61,14 @@ const isDetailReady = (details, expectation) => {
     return false;
   }
 
-  if (expectation === "input") {
+  if (pathType === "input") {
     return details.exists;
   }
 
   return true;
 };
 
-const renderDetailCard = (element, title, details, expectation) => {
+const renderDetailCard = (element, title, details, pathType) => {
   if (!details.path) {
     element.innerHTML = `
       <h3>${title}</h3>
@@ -80,12 +80,12 @@ const renderDetailCard = (element, title, details, expectation) => {
   const checks = [];
   checks.push(details.isValid ? "Absolute path ready" : "Needs an absolute path");
   checks.push(details.extension === ".xctb" ? "Uses .xctb" : "Wrong extension");
-  checks.push(details.exists ? "Exists on disk" : expectation === "input" ? "Missing on disk" : "Will be created");
+  checks.push(details.exists ? "Exists on disk" : pathType === "input" ? "Missing on disk" : "Will be created");
   if (details.isDirectory) {
     checks.push("Directory selected");
   }
 
-  const statusClass = isDetailReady(details, expectation) ? "good" : "warn";
+  const statusClass = isDetailReady(details, pathType) ? "good" : "warn";
 
   element.innerHTML = `
     <h3>${title}</h3>
