@@ -115,7 +115,7 @@ const inspectPath = async (filePath) => {
   }
 
   const isAbsolute = path.isAbsolute(trimmedPath);
-  const normalizedPath = isAbsolute ? path.normalize(trimmedPath) : trimmedPath;
+  const normalizedPath = isAbsolute ? path.resolve(trimmedPath) : trimmedPath;
   const parsedPath = path.parse(normalizedPath);
 
   try {
