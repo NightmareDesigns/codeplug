@@ -22,11 +22,16 @@ const validateUserPath = (filePath, label) => {
     throw new Error(`${label} path is invalid.`);
   }
 
-  if (!path.isAbsolute(filePath)) {
+  const trimmedPath = filePath.trim();
+  if (!trimmedPath) {
+    throw new Error(`${label} path is required.`);
+  }
+
+  if (!path.isAbsolute(trimmedPath)) {
     throw new Error(`${label} path must be absolute.`);
   }
 
-  return path.normalize(filePath);
+  return path.normalize(trimmedPath);
 };
 
 const runDecrypter = (inputPath, outputPath) =>
