@@ -4,7 +4,7 @@
   "description": "moto codeplug tool",
   "main": "main.js",
   "scripts": {
-    "build:native": "sh native/build.sh",
+    "build:native": "node native/build.js",
     "start": "npm run build:native && electron .",
     "test": "echo \"No automated tests yet\""
   },

@@ -77,16 +77,18 @@
   <body>
     <main class="container">
       <h1>DDEplug Decrypter</h1>
-      <p class="hint">Starter GUI for decrypting codeplug files with a native C backend.</p>
+      <p class="hint">
+        Decrypt .xctb codeplug files with a native C backend. Output auto-fills when input is set.
+      </p>
       <section class="card">
         <form id="decrypt-form">
           <div class="row">
             <label for="inputPath">Encrypted file path</label>
-            <input id="inputPath" name="inputPath" placeholder="/path/to/input.bin" required />
+            <input id="inputPath" name="inputPath" placeholder="/path/to/input.xctb" required />
           </div>
           <div class="row">
             <label for="outputPath">Output file path</label>
-            <input id="outputPath" name="outputPath" placeholder="/path/to/output.bin" required />
+            <input id="outputPath" name="outputPath" placeholder="/path/to/output.xctb" required />
           </div>
           <button type="submit">Decrypt</button>
         </form>
