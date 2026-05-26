@@ -1,5 +1,20 @@
 const form = document.getElementById("decrypt-form");
 const statusEl = document.getElementById("status");
+const inputPathEl = document.getElementById("inputPath");
+const outputPathEl = document.getElementById("outputPath");
+
+inputPathEl.addEventListener("change", () => {
+  const inputPath = inputPathEl.value.trim();
+  if (!inputPath || outputPathEl.value.trim()) {
+    return;
+  }
+
+  if (!inputPath.toLowerCase().endsWith(".xctb")) {
+    return;
+  }
+
+  outputPathEl.value = inputPath.replace(/\.xctb$/i, ".decrypted.xctb");
+});
 
 form.addEventListener("submit", async (event) => {
   event.preventDefault();

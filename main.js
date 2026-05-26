@@ -60,9 +60,17 @@ const runDecrypter = (inputPath, outputPath) =>
     });
   });
 
+const validateXctbPath = (filePath, label) => {
+  if (path.extname(filePath).toLowerCase() !== ".xctb") {
+    throw new Error(`${label} file must use the .xctb extension.`);
+  }
+};
+
 ipcMain.handle("decrypt-file", async (_, inputPath, outputPath) => {
   const safeInputPath = validateUserPath(inputPath, "Input");
   const safeOutputPath = validateUserPath(outputPath, "Output");
+  validateXctbPath(safeInputPath, "Input");
+  validateXctbPath(safeOutputPath, "Output");
 
   try {
     await fs.access(safeInputPath);
