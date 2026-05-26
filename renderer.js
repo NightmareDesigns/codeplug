@@ -52,6 +52,22 @@ const setStatus = (state, message) => {
   statusEl.textContent = message;
 };
 
+const isDetailReady = (details, expectation) => {
+  if (!details.isValid || details.extension !== ".xctb") {
+    return false;
+  }
+
+  if (details.isDirectory) {
+    return false;
+  }
+
+  if (expectation === "input") {
+    return details.exists;
+  }
+
+  return true;
+};
+
 const renderDetailCard = (element, title, details, expectation) => {
   if (!details.path) {
     element.innerHTML = `
@@ -69,12 +85,7 @@ const renderDetailCard = (element, title, details, expectation) => {
     checks.push("Directory selected");
   }
 
-  const statusClass =
-    details.isValid &&
-    details.extension === ".xctb" &&
-    (expectation !== "input" || (details.exists && !details.isDirectory))
-      ? "good"
-      : "warn";
+  const statusClass = isDetailReady(details, expectation) ? "good" : "warn";
 
   element.innerHTML = `
     <h3>${title}</h3>
