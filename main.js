@@ -33,7 +33,7 @@ const validateUserPath = (filePath, label) => {
     throw new Error(`${label} path must be absolute.`);
   }
 
-  return path.normalize(trimmedPath);
+  return path.resolve(trimmedPath);
 };
 
 const ensureXctbExtension = (filePath) => {
@@ -161,11 +161,14 @@ ipcMain.handle("pick-input-file", async () => {
 
 ipcMain.handle("pick-output-file", async (_, inputPath, currentOutputPath) => {
   let defaultPath = null;
+  const trimmedOutputPath =
+    typeof currentOutputPath === "string" ? currentOutputPath.trim() : "";
+  const trimmedInputPath = typeof inputPath === "string" ? inputPath.trim() : "";
 
-  if (typeof currentOutputPath === "string" && currentOutputPath.trim() && path.isAbsolute(currentOutputPath.trim())) {
-    defaultPath = ensureXctbExtension(path.normalize(currentOutputPath.trim()));
-  } else if (typeof inputPath === "string" && inputPath.trim() && path.isAbsolute(inputPath.trim())) {
-    defaultPath = buildSuggestedOutputPath(path.normalize(inputPath.trim()));
+  if (trimmedOutputPath && path.isAbsolute(trimmedOutputPath)) {
+    defaultPath = ensureXctbExtension(path.resolve(trimmedOutputPath));
+  } else if (trimmedInputPath && path.isAbsolute(trimmedInputPath)) {
+    defaultPath = buildSuggestedOutputPath(path.resolve(trimmedInputPath));
   }
 
   const { canceled, filePath } = await dialog.showSaveDialog(getActiveWindow(), {
