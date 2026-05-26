@@ -48,7 +48,12 @@ ipcMain.handle("decrypt-file", async (_, inputPath, outputPath) => {
     throw new Error("Input and output paths are required.");
   }
 
-  await fs.access(inputPath);
+  try {
+    await fs.access(inputPath);
+  } catch {
+    throw new Error(`Input file does not exist or is not accessible: ${inputPath}`);
+  }
+
   await runDecryptor(inputPath, outputPath);
   return outputPath;
 });
