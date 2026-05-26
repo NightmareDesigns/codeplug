@@ -21,10 +21,12 @@ const runCompiler = (compiler) => {
 
 const build = async () => {
   await mkdir(outDir, { recursive: true });
+  const failureDetails = [];
 
   for (const compiler of compilerCandidates) {
     const result = runCompiler(compiler);
     if (result.error) {
+      failureDetails.push(`${compiler}: ${result.error.message}`);
       continue;
     }
 
@@ -32,10 +34,15 @@ const build = async () => {
       process.stdout.write(`Built ${outputFile}\n`);
       return;
     }
+
+    const stderr = (result.stderr || "").trim();
+    const stdout = (result.stdout || "").trim();
+    failureDetails.push(`${compiler}: ${stderr || stdout || `exit code ${result.status}`}`);
   }
 
+  const detailText = failureDetails.length ? `\n${failureDetails.join("\n")}` : "";
   throw new Error(
-    `Unable to compile native/decrypter.c. Install one of: ${compilerCandidates.join(", ")}.`
+    `Unable to compile native/decrypter.c. Install one of: ${compilerCandidates.join(", ")}.${detailText}`
   );
 };
 
