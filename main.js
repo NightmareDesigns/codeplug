@@ -17,7 +17,19 @@ const createWindow = () => {
   win.loadFile("index.html");
 };
 
-const runDecryptor = (inputPath, outputPath) =>
+const validateUserPath = (filePath, label) => {
+  if (typeof filePath !== "string" || filePath.includes("\0")) {
+    throw new Error(`${label} path is invalid.`);
+  }
+
+  if (!path.isAbsolute(filePath)) {
+    throw new Error(`${label} path must be absolute.`);
+  }
+
+  return path.normalize(filePath);
+};
+
+const runDecrypter = (inputPath, outputPath) =>
   new Promise((resolve, reject) => {
     const binName = process.platform === "win32" ? "decrypter.exe" : "decrypter";
     const binaryPath = path.join(__dirname, "native", "bin", binName);
@@ -44,18 +56,17 @@ const runDecryptor = (inputPath, outputPath) =>
   });
 
 ipcMain.handle("decrypt-file", async (_, inputPath, outputPath) => {
-  if (!inputPath || !outputPath) {
-    throw new Error("Input and output paths are required.");
-  }
+  const safeInputPath = validateUserPath(inputPath, "Input");
+  const safeOutputPath = validateUserPath(outputPath, "Output");
 
   try {
-    await fs.access(inputPath);
+    await fs.access(safeInputPath);
   } catch {
-    throw new Error(`Input file does not exist or is not accessible: ${inputPath}`);
+    throw new Error(`Input file does not exist or is not accessible: ${safeInputPath}`);
   }
 
-  await runDecryptor(inputPath, outputPath);
-  return outputPath;
+  await runDecrypter(safeInputPath, safeOutputPath);
+  return safeOutputPath;
 });
 
 app.whenReady().then(() => {
