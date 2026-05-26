@@ -68,6 +68,27 @@
         color: #93c5fd;
       }
 
+      #log {
+        margin-top: 12px;
+        padding: 10px 12px;
+        background: #111827;
+        border: 1px solid #374151;
+        border-radius: 8px;
+        font-family: monospace;
+        font-size: 12px;
+        color: #d1d5db;
+        min-height: 60px;
+        max-height: 200px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+        display: none;
+      }
+
+      #log:not(:empty) {
+        display: block;
+      }
+
       .hint {
         color: #9ca3af;
         font-size: 13px;
@@ -91,6 +112,7 @@
           <button type="submit">Decrypt</button>
         </form>
         <p id="status"></p>
+        <pre id="log"></pre>
       </section>
     </main>
     <script src="./renderer.js"></script>

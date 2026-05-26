@@ -37,6 +37,7 @@ int main(int argc, char **argv) {
   }
 
   uint8_t buffer[4096];
+  size_t total_bytes = 0;
   size_t bytes_read = fread(buffer, sizeof(uint8_t), sizeof(buffer), in);
   while (bytes_read > 0) {
     for (size_t i = 0; i < bytes_read; i++) {
@@ -49,6 +50,10 @@ int main(int argc, char **argv) {
       fclose(out);
       return 1;
     }
+
+    total_bytes += bytes_read;
+    fprintf(stdout, "progress:%zu\n", total_bytes);
+    fflush(stdout);
 
     bytes_read = fread(buffer, sizeof(uint8_t), sizeof(buffer), in);
   }
