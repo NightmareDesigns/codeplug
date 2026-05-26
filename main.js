@@ -1,12 +1,14 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, dialog } = require("electron");
 const path = require("node:path");
 const fs = require("node:fs/promises");
 const { spawn } = require("node:child_process");
 
 const createWindow = () => {
   const win = new BrowserWindow({
-    width: 900,
-    height: 620,
+    width: 1180,
+    height: 760,
+    minWidth: 980,
+    minHeight: 700,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
@@ -33,6 +35,22 @@ const validateUserPath = (filePath, label) => {
 
   return path.normalize(trimmedPath);
 };
+
+const ensureXctbExtension = (filePath) => {
+  if (path.extname(filePath).toLowerCase() === ".xctb") {
+    return filePath;
+  }
+
+  return `${filePath}.xctb`;
+};
+
+const buildSuggestedOutputPath = (inputPath) => {
+  const parsedPath = path.parse(inputPath);
+  return path.join(parsedPath.dir, `${parsedPath.name}.decrypted.xctb`);
+};
+
+const getActiveWindow = () =>
+  BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0] || null;
 
 const runDecrypter = (inputPath, outputPath) =>
   new Promise((resolve, reject) => {
@@ -66,11 +84,110 @@ const validateXctbPath = (filePath, label) => {
   }
 };
 
+const inspectPath = async (filePath) => {
+  if (typeof filePath !== "string" || filePath.includes("\0")) {
+    return {
+      path: "",
+      isValid: false,
+      exists: false,
+      isDirectory: false,
+      extension: "",
+      name: "",
+      directory: "",
+      size: null,
+      error: "Path is invalid."
+    };
+  }
+
+  const trimmedPath = filePath.trim();
+  if (!trimmedPath) {
+    return {
+      path: "",
+      isValid: false,
+      exists: false,
+      isDirectory: false,
+      extension: "",
+      name: "",
+      directory: "",
+      size: null,
+      error: "Path is required."
+    };
+  }
+
+  const isAbsolute = path.isAbsolute(trimmedPath);
+  const normalizedPath = isAbsolute ? path.normalize(trimmedPath) : trimmedPath;
+  const parsedPath = path.parse(normalizedPath);
+
+  try {
+    const stats = await fs.stat(normalizedPath);
+    return {
+      path: normalizedPath,
+      isValid: isAbsolute,
+      exists: true,
+      isDirectory: stats.isDirectory(),
+      extension: parsedPath.ext.toLowerCase(),
+      name: parsedPath.base,
+      directory: parsedPath.dir,
+      size: stats.isDirectory() ? null : stats.size,
+      error: isAbsolute ? null : "Path must be absolute."
+    };
+  } catch {
+    return {
+      path: normalizedPath,
+      isValid: isAbsolute,
+      exists: false,
+      isDirectory: false,
+      extension: parsedPath.ext.toLowerCase(),
+      name: parsedPath.base,
+      directory: parsedPath.dir,
+      size: null,
+      error: isAbsolute ? null : "Path must be absolute."
+    };
+  }
+};
+
+ipcMain.handle("pick-input-file", async () => {
+  const { canceled, filePaths } = await dialog.showOpenDialog(getActiveWindow(), {
+    title: "Choose encrypted .xctb file",
+    properties: ["openFile"],
+    filters: [
+      { name: "XCTB codeplug files", extensions: ["xctb"] },
+      { name: "All files", extensions: ["*"] }
+    ]
+  });
+
+  return canceled ? null : filePaths[0];
+});
+
+ipcMain.handle("pick-output-file", async (_, inputPath, currentOutputPath) => {
+  let defaultPath = null;
+
+  if (typeof currentOutputPath === "string" && currentOutputPath.trim() && path.isAbsolute(currentOutputPath.trim())) {
+    defaultPath = ensureXctbExtension(path.normalize(currentOutputPath.trim()));
+  } else if (typeof inputPath === "string" && inputPath.trim() && path.isAbsolute(inputPath.trim())) {
+    defaultPath = buildSuggestedOutputPath(path.normalize(inputPath.trim()));
+  }
+
+  const { canceled, filePath } = await dialog.showSaveDialog(getActiveWindow(), {
+    title: "Choose decrypted output file",
+    defaultPath: defaultPath || undefined,
+    filters: [{ name: "XCTB codeplug files", extensions: ["xctb"] }]
+  });
+
+  return canceled || !filePath ? null : ensureXctbExtension(filePath);
+});
+
+ipcMain.handle("inspect-path", async (_, filePath) => inspectPath(filePath));
+
 ipcMain.handle("decrypt-file", async (_, inputPath, outputPath) => {
   const safeInputPath = validateUserPath(inputPath, "Input");
   const safeOutputPath = validateUserPath(outputPath, "Output");
   validateXctbPath(safeInputPath, "Input");
   validateXctbPath(safeOutputPath, "Output");
+
+  if (safeInputPath === safeOutputPath) {
+    throw new Error("Input and output paths must be different.");
+  }
 
   try {
     await fs.access(safeInputPath);
@@ -78,8 +195,18 @@ ipcMain.handle("decrypt-file", async (_, inputPath, outputPath) => {
     throw new Error(`Input file does not exist or is not accessible: ${safeInputPath}`);
   }
 
-  await runDecrypter(safeInputPath, safeOutputPath);
-  return safeOutputPath;
+  await fs.mkdir(path.dirname(safeOutputPath), { recursive: true });
+  const inputStats = await fs.stat(safeInputPath);
+  const message = await runDecrypter(safeInputPath, safeOutputPath);
+  const outputStats = await fs.stat(safeOutputPath);
+
+  return {
+    inputPath: safeInputPath,
+    outputPath: safeOutputPath,
+    message,
+    inputSize: inputStats.size,
+    outputSize: outputStats.size
+  };
 });
 
 app.whenReady().then(() => {
