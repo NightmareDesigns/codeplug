@@ -13,5 +13,9 @@ contextBridge.exposeInMainWorld("decrypterApi", {
       ipcRenderer.removeListener("decrypt-progress", _progressListener);
       _progressListener = null;
     }
-  }
+  },
+  pickInputFile: () => ipcRenderer.invoke("pick-input-file"),
+  pickOutputFile: (inputPath, outputPath) =>
+    ipcRenderer.invoke("pick-output-file", inputPath, outputPath),
+  inspectPath: (filePath) => ipcRenderer.invoke("inspect-path", filePath)
 });
