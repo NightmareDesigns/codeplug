@@ -36,16 +36,21 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  int byte = fgetc(in);
-  while (byte != EOF) {
-    uint8_t decrypted = ((uint8_t)byte) ^ ((uint8_t)key);
-    if (fputc((int)decrypted, out) == EOF) {
+  uint8_t buffer[4096];
+  size_t bytes_read = fread(buffer, sizeof(uint8_t), sizeof(buffer), in);
+  while (bytes_read > 0) {
+    for (size_t i = 0; i < bytes_read; i++) {
+      buffer[i] ^= (uint8_t)key;
+    }
+
+    if (fwrite(buffer, sizeof(uint8_t), bytes_read, out) != bytes_read) {
       fprintf(stderr, "Write failed: %s\n", strerror(errno));
       fclose(in);
       fclose(out);
       return 1;
     }
-    byte = fgetc(in);
+
+    bytes_read = fread(buffer, sizeof(uint8_t), sizeof(buffer), in);
   }
 
   if (ferror(in)) {

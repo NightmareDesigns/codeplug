@@ -1,4 +1,4 @@
-# codeplug
+# DDEplug decrypter starter
 
 Starter DDEplug decrypter project with:
 
