@@ -230,6 +230,27 @@
         background: rgba(239, 68, 68, 0.12);
       }
 
+      #log {
+        margin-top: 12px;
+        padding: 10px 12px;
+        background: rgba(2, 8, 23, 0.62);
+        border: 1px solid rgba(148, 163, 184, 0.15);
+        border-radius: 12px;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        color: #d1d5db;
+        min-height: 60px;
+        max-height: 200px;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+        display: none;
+      }
+
+      #log:not(:empty) {
+        display: block;
+      }
+
       .sidebar {
         display: grid;
         gap: 20px;
@@ -411,6 +432,7 @@
           </form>
 
           <div id="status" data-state="idle">Choose an .xctb file to start.</div>
+          <pre id="log"></pre>
         </article>
 
         <aside class="sidebar">

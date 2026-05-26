@@ -1,5 +1,6 @@
 const form = document.getElementById("decrypt-form");
 const statusEl = document.getElementById("status");
+const logEl = document.getElementById("log");
 const inputPathEl = document.getElementById("inputPath");
 const outputPathEl = document.getElementById("outputPath");
 const inputBrowseEl = document.getElementById("browseInput");
@@ -50,6 +51,15 @@ const getSuggestedOutputPath = (inputPath) => {
 const setStatus = (state, message) => {
   statusEl.dataset.state = state;
   statusEl.textContent = message;
+};
+
+const appendLog = (text) => {
+  logEl.textContent += text + "\n";
+  logEl.scrollTop = logEl.scrollHeight;
+};
+
+const clearLog = () => {
+  logEl.textContent = "";
 };
 
 const isDetailReady = (details, pathType) => {
@@ -194,6 +204,7 @@ suggestOutputEl.addEventListener("click", async () => {
 resetFormEl.addEventListener("click", async () => {
   form.reset();
   lastSuggestedOutputPath = "";
+  clearLog();
   await refreshPathDetails();
   setStatus("idle", "Form cleared. Choose a new .xctb file to begin.");
 });
@@ -208,14 +219,25 @@ outputPathEl.addEventListener("input", refreshPathDetails);
 form.addEventListener("submit", async (event) => {
   event.preventDefault();
   submitButtonEl.disabled = true;
+  clearLog();
   setStatus("busy", "Decrypting .xctb file...");
 
   const formData = new FormData(form);
   const inputPath = String(formData.get("inputPath") || "").trim();
   const outputPath = String(formData.get("outputPath") || "").trim();
 
+  window.decrypterApi.removeProgressListener();
+  window.decrypterApi.onProgress((payload) => {
+    if (payload.status === "progress") {
+      setStatus("busy", `Decrypting... ${payload.bytesProcessed.toLocaleString()} bytes processed`);
+    } else if (payload.status === "log") {
+      appendLog(payload.detail);
+    }
+  });
+
   try {
     const result = await window.decrypterApi.decryptFile(inputPath, outputPath);
+    window.decrypterApi.removeProgressListener();
     outputPathEl.value = result.outputPath;
     lastSuggestedOutputPath = result.outputPath;
     await refreshPathDetails();
@@ -224,6 +246,7 @@ form.addEventListener("submit", async (event) => {
       `${result.message} Output: ${result.outputPath} (${formatBytes(result.outputSize)}).`
     );
   } catch (error) {
+    window.decrypterApi.removeProgressListener();
     await refreshPathDetails();
     setStatus("error", `Error: ${error.message}`);
   }

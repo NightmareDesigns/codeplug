@@ -52,16 +52,27 @@ const buildSuggestedOutputPath = (inputPath) => {
 const getActiveWindow = () =>
   BrowserWindow.getFocusedWindow() || BrowserWindow.getAllWindows()[0] || null;
 
-const runDecrypter = (inputPath, outputPath) =>
+const runDecrypter = (inputPath, outputPath, onProgress) =>
   new Promise((resolve, reject) => {
     const binName = process.platform === "win32" ? "decrypter.exe" : "decrypter";
     const binaryPath = path.join(__dirname, "native", "bin", binName);
     const child = spawn(binaryPath, [inputPath, outputPath]);
-    let stdout = "";
     let stderr = "";
 
     child.stdout.on("data", (chunk) => {
-      stdout += chunk.toString();
+      const text = chunk.toString();
+      for (const line of text.split("\n")) {
+        const trimmed = line.trim();
+        if (!trimmed) continue;
+        if (trimmed.startsWith("progress:")) {
+          const bytes = parseInt(trimmed.slice("progress:".length), 10);
+          if (!Number.isNaN(bytes)) {
+            onProgress({ status: "progress", bytesProcessed: bytes });
+          }
+        } else {
+          onProgress({ status: "log", detail: trimmed });
+        }
+      }
     });
 
     child.stderr.on("data", (chunk) => {
@@ -71,7 +82,7 @@ const runDecrypter = (inputPath, outputPath) =>
     child.on("error", (err) => reject(err));
     child.on("close", (code) => {
       if (code === 0) {
-        resolve(stdout.trim() || "Decrypt completed.");
+        resolve("Decrypt completed.");
         return;
       }
       reject(new Error(stderr.trim() || `Decrypter failed with code ${code}.`));
@@ -182,7 +193,7 @@ ipcMain.handle("pick-output-file", async (_, inputPath, currentOutputPath) => {
 
 ipcMain.handle("inspect-path", async (_, filePath) => inspectPath(filePath));
 
-ipcMain.handle("decrypt-file", async (_, inputPath, outputPath) => {
+ipcMain.handle("decrypt-file", async (event, inputPath, outputPath) => {
   const safeInputPath = validateUserPath(inputPath, "Input");
   const safeOutputPath = validateUserPath(outputPath, "Output");
   validateXctbPath(safeInputPath, "Input");
@@ -198,9 +209,16 @@ ipcMain.handle("decrypt-file", async (_, inputPath, outputPath) => {
     throw new Error(`Input file does not exist or is not accessible: ${safeInputPath}`);
   }
 
+  const sender = event.sender;
+  const sendProgress = (payload) => {
+    if (!sender.isDestroyed()) {
+      sender.send("decrypt-progress", payload);
+    }
+  };
+
   await fs.mkdir(path.dirname(safeOutputPath), { recursive: true });
   const inputStats = await fs.stat(safeInputPath);
-  const message = await runDecrypter(safeInputPath, safeOutputPath);
+  const message = await runDecrypter(safeInputPath, safeOutputPath, sendProgress);
   const outputStats = await fs.stat(safeOutputPath);
 
   return {
