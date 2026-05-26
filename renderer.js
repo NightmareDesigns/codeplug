@@ -25,7 +25,7 @@ form.addEventListener("submit", async (event) => {
   window.decrypterApi.removeProgressListener();
   window.decrypterApi.onProgress((payload) => {
     if (payload.status === "progress") {
-      statusEl.textContent = `Decrypting… ${payload.bytesProcessed.toLocaleString()} bytes processed`;
+      statusEl.textContent = `Decrypting... ${payload.bytesProcessed.toLocaleString()} bytes processed`;
     } else if (payload.status === "log") {
       appendLog(payload.detail);
     }

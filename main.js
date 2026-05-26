@@ -48,7 +48,9 @@ const runDecrypter = (inputPath, outputPath, onProgress) =>
         if (!trimmed) continue;
         if (trimmed.startsWith("progress:")) {
           const bytes = parseInt(trimmed.slice("progress:".length), 10);
-          onProgress({ status: "progress", bytesProcessed: bytes });
+          if (!Number.isNaN(bytes)) {
+            onProgress({ status: "progress", bytesProcessed: bytes });
+          }
         } else {
           onProgress({ status: "log", detail: trimmed });
         }
