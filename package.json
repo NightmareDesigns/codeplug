@@ -1,0 +1,26 @@
+{
+  "name": "codeplug",
+  "version": "1.0.0",
+  "description": "moto codeplug tool",
+  "main": "main.js",
+  "scripts": {
+    "build:native": "sh native/build.sh",
+    "start": "npm run build:native && electron .",
+    "test": "echo \"No automated tests yet\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/NightmareDesigns/codeplug.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/NightmareDesigns/codeplug/issues"
+  },
+  "homepage": "https://github.com/NightmareDesigns/codeplug#readme",
+  "devDependencies": {
+    "electron": "^42.2.0"
+  }
+}
